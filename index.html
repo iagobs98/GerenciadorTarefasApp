@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+</head>
+<body>
+    <div class="container mt-7">
+        <div>
+            <button class="btn btn-success mb-4" data-bs-toggle="modal" data-bs-target="#cadastroModal">Nova Tarefa</button>
+        </div>
+        <div class="d-flex flex-wrap align-items-end gap-3 mb-4">
+            <div>
+                <label for="inputBuscaId" class="form-label">Buscar por ID</label>
+                <div class="input-group">
+                    <input type="text" id="inputBuscaId" class="form-control" placeholder="Digite o ID">
+                    <button class="btn btn-primary" onclick="buscarPorId()">Buscar</button>
+                </div>
+            </div>
+
+            <div>
+                <label for="filtroStatus" class="form-label">Filtrar por Status</label>
+                <select id="filtroStatus" class="form-select" onchange="filtrarPorStatus()">
+                    <option value="">Todos</option>
+                    <option value="Pendente">Pendente</option>
+                    <option value="EmProgresso">Em progresso</option>
+                    <option value="Concluida">Concluída</option>
+                </select>
+            </div>
+        </div>
+        <table class="table table-striped table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>Id</th>
+                    <th>Titulo</th>
+                    <th>Descrição</th>
+                    <th>Data de criação</th>
+                    <th>Data de conclusão</th>
+                    <th>Status</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-corpo">
+            </tbody>
+        </table>
+    </div>
+
+    <div class="modal fade" id="cadastroModal" tabindex="-1" aria-labelledby="cadastroModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+
+                <div class="modal-header">
+                    <h5 class="modal-title" id="cadastroModalLabel">Cadastrar Tarefa</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                </div>
+
+                <div class="modal-body">
+                    <form id="formCadastroTarefa">
+                        <div class="mb-3">
+                            <label for="tituloTarefa" class="form-label">Título</label>
+                            <input type="text" class="form-control" id="tituloTarefa" placeholder="Digite o título da tarefa">
+                        </div>
+                        <div class="mb-3">
+                            <label for="descricaoTarefa" class="form-label">Descrição</label>
+                            <input type="text" class="form-control" id="descricaoTarefa" placeholder="Digite a descrição">
+                        </div>
+                        <div class="mb-3">
+                            <label for="statusTarefa" class="form-label">Status</label>
+                            <select class="form-select" id="statusTarefa">
+                                <option value="Pendente">Pendente</option>
+                                <option value="EmProgresso">Em progresso</option>
+                                <option value="Concluida">Concluída</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Salvar Tarefa</button>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalEdicao" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content p-3">
+                <h5 class="modal-title">Editar Tarefa</h5>
+
+                <input type="hidden" id="edit-id">
+                <div class="mb-2">
+                    <label>Título</label>
+                    <input type="text" class="form-control" id="edit-titulo">
+                </div>
+                <div class="mb-2">
+                    <label>Descrição</label>
+                    <input type="text" class="form-control" id="edit-descricao">
+                </div>
+                <div class="mb-2">
+                    <label>Status</label>
+                    <select id="edit-status" class="form-select">
+                        <option value="Pendente">Pendente</option>
+                        <option value="EmProgresso">Em progresso</option>
+                        <option value="Concluida">Concluída</option>
+                    </select>
+                </div>
+                <div class="mb-2">
+                    <label>Data de conclusão</label>
+                    <input type="date" class="form-control" id="edit-data">
+                </div>
+
+                <div class="d-flex justify-content-end mt-3">
+                    <button class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancelar</button>
+                    <button class="btn btn-success" onclick="enviarEdicaoTarefa()">Salvar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+<script src="config.js"></script>
+<script>
+
+    const tabelaCorpo = document.getElementById('tabela-corpo');
+
+    fetch(apiUrl)
+        .then(response => {
+            if (!response.ok) throw new Error(response);
+            return response.json();
+        })
+        .then(tarefas => {
+            tarefas.forEach(tarefa => {
+                const tr = document.createElement('tr');
+
+                const dataCriacao = new Date(tarefa.dataCriacao).toLocaleDateString("pt-BR");
+                const dataConclusao = tarefa.dataConclusao != null ? new Date(tarefa.dataConclusao).toLocaleDateString("pt-BR") : null;
+
+                tr.innerHTML = `
+                    <td>${tarefa.id}</td>
+                    <td>${tarefa.titulo}</td>
+                    <td>${tarefa.descricao}</td>
+                    <td>${dataCriacao}</td>
+                    <td>${dataConclusao}</td>
+                    <td>${tarefa.eStatusTarefa}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary me-2" onclick="abrirModalEdicao(${tarefa.id}, '${tarefa.titulo}', '${tarefa.descricao}', '${tarefa.eStatusTarefa}', '${tarefa.dataConclusao}')">Editar</button>
+                        <button class="btn btn-sm btn-danger" onclick="excluirTarefa(${tarefa.id}, this)">Excluir</button>
+                    </td>
+                `;
+
+                tabelaCorpo.appendChild(tr);
+            });
+        })
+        .catch(error => {
+            alert(error);
+        });
+
+
+    document.getElementById('formCadastroTarefa').addEventListener('submit', function (e) {
+        e.preventDefault(); 
+
+        const titulo = document.getElementById('tituloTarefa').value;
+        const descricao = document.getElementById('descricaoTarefa').value;
+        const status = document.getElementById('statusTarefa').value;
+
+        const tarefa = {
+            titulo: titulo,
+            descricao: descricao,
+            eStatusTarefa: status
+        };
+
+        fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(tarefa)
+        })
+        .then(async response => {
+            if (!response.ok) {
+
+                const statusCode = response.status;
+                const contentType = response.headers.get('content-type');
+                let message = `Erro ${statusCode}`;
+
+                if (contentType && contentType.includes('application/json')) {
+                    const errorJson = await response.json();
+                    if (errorJson.message) {
+                        message = `Erro ${statusCode}: ${errorJson.message}`;
+                    } else {
+                        message = `Erro ${statusCode}: ${JSON.stringify(errorJson)}`;
+                    }
+                } else {
+                    const text = await response.text();
+                    if (text) {
+                        message = `Erro ${statusCode}: ${text}`;
+                    }
+                }
+
+                throw new Error(message);
+            }
+        })
+        .then(data => {
+            alert('Sucesso!');
+        })
+        .catch(err => {
+            alert(err.message);
+        });
+    });
+
+    function enviarEdicaoTarefa() {
+        const id = document.getElementById('edit-id').value;
+        const titulo = document.getElementById('edit-titulo').value;
+        const descricao = document.getElementById('edit-descricao').value;
+        const status = document.getElementById('edit-status').value;
+        const data = document.getElementById('edit-data').value;
+
+        const tarefaAtualizada = {
+            titulo: titulo,
+            descricao: descricao,
+            dataConclusao: data == "" ? null : data,
+            eStatusTarefa: status
+        };
+
+        fetch(`${apiUrl}/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(tarefaAtualizada)
+        })
+        .then(async response => {
+            if (!response.ok) {
+
+                const statusCode = response.status;
+                const contentType = response.headers.get('content-type');
+                let message = `Erro ${statusCode}`;
+
+                if (contentType && contentType.includes('application/json')) {
+                    const errorJson = await response.json();
+                    if (errorJson.message) {
+                        message = `Erro ${statusCode}: ${errorJson.message}`;
+                    } else {
+                        message = `Erro ${statusCode}: ${JSON.stringify(errorJson)}`;
+                    }
+                } else {
+                    const text = await response.text();
+                    if (text) {
+                        message = `Erro ${statusCode}: ${text}`;
+                    }
+                }
+
+                throw new Error(message);
+            }
+        })
+        .then(data => {
+            alert('Sucesso!');
+        })
+        .catch(err => {
+            alert(err.message);
+        });
+    }
+
+    function buscarPorId() {
+
+        const id = document.getElementById('inputBuscaId').value;
+
+        if (!id || isNaN(id)) {
+            return;
+        }
+
+        fetch(`${apiUrl}/${id}`, {
+            method: 'GET'
+        })
+        .then(response => {
+            if (!response.ok) throw new Error(response);
+            return response.json();
+        })
+        .then(tarefa => {
+
+            const dataCriacao = new Date(tarefa.dataCriacao).toLocaleDateString("pt-BR");
+            const dataConclusao = tarefa.dataConclusao != null ? new Date(tarefa.dataConclusao).toLocaleDateString("pt-BR") : null;
+
+            tabelaCorpo.innerHTML = `
+                <tr>
+                    <td>${tarefa.id}</td>
+                    <td>${tarefa.titulo}</td>
+                    <td>${tarefa.descricao}</td>
+                    <td>${dataCriacao}</td>
+                    <td>${dataConclusao}</td>
+                    <td>${tarefa.eStatusTarefa}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary me-2" data-bs-toggle="modal" data-bs-target="#editModal" onclick="abrirModalEdicao(${tarefa.id}, '${tarefa.titulo}', '${tarefa.descricao}', '${tarefa.eStatusTarefa}', '${tarefa.dataConclusao}')">Editar</button>
+                        <button class="btn btn-sm btn-danger" onclick="excluirTarefa(${tarefa.id}, this)">Excluir</button>
+                    </td>
+                </tr>
+            `;
+        }).catch(error => {
+            tabelaCorpo.innerHTML = ''
+        });
+    }
+
+    function filtrarPorStatus() {
+        const status = document.getElementById('filtroStatus').value;
+
+        fetch(`${apiUrl}?eStatusTarefa=${encodeURIComponent(status)}`)
+            .then(response => {
+                if (!response.ok) throw new Error(response);
+                return response.json();
+            })
+            .then(tarefas => {
+                tabelaCorpo.innerHTML = '';
+                tarefas.forEach(tarefa => {
+                    const tr = document.createElement('tr');
+
+                    const dataCriacao = new Date(tarefa.dataCriacao).toLocaleDateString("pt-BR");
+                    const dataConclusao = tarefa.dataConclusao != null ? new Date(tarefa.dataConclusao).toLocaleDateString("pt-BR") : null;
+
+                    tr.innerHTML = `
+                        <td>${tarefa.id}</td>
+                        <td>${tarefa.titulo}</td>
+                        <td>${tarefa.descricao}</td>
+                        <td>${dataCriacao}</td>
+                        <td>${dataConclusao}</td>
+                        <td>${tarefa.eStatusTarefa}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary me-2" data-bs-toggle="modal" data-bs-target="#editModal" onclick="abrirModalEdicao(${tarefa.id}, '${tarefa.titulo}', '${tarefa.descricao}', '${tarefa.eStatusTarefa}', '${tarefa.dataConclusao}')">Editar</button>
+                            <button class="btn btn-sm btn-danger" onclick="excluirTarefa(${tarefa.id}, this)">Excluir</button>
+                        </td>
+                    `;
+
+                        tabelaCorpo.appendChild(tr);
+                    });
+            })
+            .catch(error => {
+                alert(error);
+            });
+    }
+
+    function excluirTarefa(id)
+    {
+        fetch(`${apiUrl}/${id}`, {
+            method: 'DELETE'
+        }).then(response => {
+            if (response.ok) {
+                alert('Tarefa excluída com sucesso!');
+            } 
+        })
+    }
+
+    function abrirModalEdicao(id, titulo, descricao, status, data) {
+        document.getElementById('edit-id').value = id;
+        document.getElementById('edit-titulo').value = titulo;
+        document.getElementById('edit-descricao').value = descricao;
+        document.getElementById('edit-status').value = status;
+        document.getElementById('edit-data').value = data ? data.substring(0, 10) : null;
+
+        const modal = new bootstrap.Modal(document.getElementById('modalEdicao'));
+        modal.show();
+    }
+</script>>
