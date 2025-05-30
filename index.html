@@ -125,7 +125,7 @@
 
     const tabelaCorpo = document.getElementById('tabela-corpo');
 
-    fetch(apiUrl)
+    fetch(tarefasEndpoint)
         .then(response => {
             if (!response.ok) throw new Error(response);
             return response.json();
@@ -171,7 +171,7 @@
             eStatusTarefa: status
         };
 
-        fetch(apiUrl, {
+        fetch(tarefasEndpoint, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -224,7 +224,7 @@
             eStatusTarefa: status
         };
 
-        fetch(`${apiUrl}/${id}`, {
+        fetch(`${tarefasEndpoint}/${id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -271,7 +271,7 @@
             return;
         }
 
-        fetch(`${apiUrl}/${id}`, {
+        fetch(`${tarefasEndpoint}/${id}`, {
             method: 'GET'
         })
         .then(response => {
@@ -305,7 +305,7 @@
     function filtrarPorStatus() {
         const status = document.getElementById('filtroStatus').value;
 
-        fetch(`${apiUrl}?eStatusTarefa=${encodeURIComponent(status)}`)
+        fetch(`${tarefasEndpoint}?eStatusTarefa=${encodeURIComponent(status)}`)
             .then(response => {
                 if (!response.ok) throw new Error(response);
                 return response.json();
@@ -341,7 +341,7 @@
 
     function excluirTarefa(id)
     {
-        fetch(`${apiUrl}/${id}`, {
+        fetch(`${tarefasEndpoint}/${id}`, {
             method: 'DELETE'
         }).then(response => {
             if (response.ok) {
